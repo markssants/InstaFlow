@@ -87,6 +87,39 @@ export default function Home() {
     }
   };
 
+  // Handle direct file saving (avoids macOS browser download tag 'kMDItemWhereFroms')
+  const handleDownloadClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!cleanResult) return;
+
+    if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
+      e.preventDefault();
+      try {
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName: cleanResult.recommendedFilename,
+          types: [
+            {
+              description: 'Vídeo MP4 Limpo',
+              accept: { 'video/mp4': ['.mp4'] },
+            },
+          ],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(cleanResult.cleanedBuffer);
+        await writable.close();
+        return;
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+        // If error, fall back to default blob download
+        if (cleanVideoUrl) {
+          const a = document.createElement('a');
+          a.href = cleanVideoUrl;
+          a.download = cleanResult.recommendedFilename;
+          a.click();
+        }
+      }
+    }
+  };
+
   // Handle Instagram Link Submission
   const handleLinkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -674,6 +707,7 @@ export default function Home() {
                 id="download-clean-video-btn"
                 href={cleanVideoUrl}
                 download={cleanResult.recommendedFilename}
+                onClick={handleDownloadClick}
                 className="download-clean-btn"
               >
                 <Download size={22} />

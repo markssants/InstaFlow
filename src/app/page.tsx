@@ -217,7 +217,7 @@ export default function Home() {
       <header className="header">
         <div className="brand-badge">
           <span className="brand-badge-dot" />
-          <span>Purificador de Vídeos Social Media v1.0</span>
+          <span>InstaFlow v1.0 • Purificador de Vídeos</span>
         </div>
 
         <h1 className="main-title">
@@ -732,7 +732,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="footer">
-        <p>InstaPurge • Ferramenta open-source para criadores de conteúdo e editores de vídeo.</p>
+        <p>InstaFlow • Ferramenta open-source para criadores de conteúdo e editores de vídeo.</p>
         <p style={{ opacity: 0.7 }}>Processamento binário seguro executado localmente no navegador.</p>
       </footer>
     </main>

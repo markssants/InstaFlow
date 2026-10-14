@@ -1,6 +1,6 @@
-# InstaPurge 🚀 — Baixar Vídeos do Instagram & Limpeza Absoluta de Metadados (RAW)
+# InstaFlow 🚀 — Baixar Vídeos do Instagram & Limpeza Absoluta de Metadados (RAW)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SEU_USUARIO/insta-flow-tiktok)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SEU_USUARIO/InstaFlow)
 [![Next.js 14](https://img.shields.io/badge/Next.js-14-black?style=flat&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -17,7 +17,7 @@ Plataformas como **TikTok, Instagram Reels e YouTube Shorts** analisam os átomo
 2. **Carimbos de data e hora antigos** revelam que a mídia não é recente.
 3. **Coordenadas de GPS e dados do aparelho** podem vazar sua privacidade ou localização original.
 
-Com o **InstaPurge**, todos esses átomos são desintegrados diretamente no cliente em milissegundos, com **ZERO perda de qualidade de imagem ou som** (Stream Copy binário).
+Com o **InstaFlow**, todos esses átomos são desintegrados diretamente no cliente em milissegundos, com **ZERO perda de qualidade de imagem ou som** (Stream Copy binário).
 
 ---
 
@@ -36,8 +36,8 @@ Com o **InstaPurge**, todos esses átomos são desintegrados diretamente no clie
 
 1. **Clone o repositório:**
    ```bash
-   git clone https://github.com/SEU_USUARIO/insta-flow-tiktok.git
-   cd insta-flow-tiktok
+   git clone https://github.com/SEU_USUARIO/InstaFlow.git
+   cd InstaFlow
    ```
 
 2. **Instale as dependências:**
@@ -60,9 +60,9 @@ Com o **InstaPurge**, todos esses átomos são desintegrados diretamente no clie
    ```bash
    git init
    git add .
-   git commit -m "feat: InstaPurge Instagram Downloader & Metadata Stripper"
+   git commit -m "feat: InstaFlow Instagram Downloader & Metadata Stripper"
    git branch -M main
-   git remote add origin https://github.com/SEU_USUARIO/insta-flow-tiktok.git
+   git remote add origin https://github.com/SEU_USUARIO/InstaFlow.git
    git push -u origin main
    ```
 

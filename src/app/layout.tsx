@@ -8,7 +8,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'InstaPurge - Baixar Vídeo do Instagram & Limpar Metadados EXIF/GPS',
+  title: 'InstaFlow - Baixar Vídeo do Instagram & Limpar Metadados EXIF/GPS',
   description:
     'Baixe vídeos e reels do Instagram e remova 100% dos metadados, carimbos de data/hora, geolocalização e identificadores para repostar de forma limpa no TikTok e Shorts.',
   keywords: [
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     'video sem metadados',
     'repost reels sem penalizacao',
   ],
-  authors: [{ name: 'InstaPurge Studio' }],
+  authors: [{ name: 'InstaFlow Studio' }],
 };
 
 export default function RootLayout({

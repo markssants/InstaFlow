@@ -1,5 +1,5 @@
 {
-  "name": "insta-clean-flow",
+  "name": "instaflow",
   "version": "1.0.0",
   "private": true,
   "description": "Download Instagram videos and strip all metadata and EXIF for clean reposting",

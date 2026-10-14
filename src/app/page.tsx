@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Link2,
   Upload,
@@ -17,6 +17,7 @@ import {
   MapPin,
   Cpu,
   Zap,
+  Share2,
 } from 'lucide-react';
 import { cleanMp4Metadata, CleanResult } from '@/lib/mp4Cleaner';
 
@@ -87,6 +88,22 @@ export default function Home() {
     }
   };
 
+  const [canShare, setCanShare] = useState(false);
+
+  // Check if Web Share API with Files is supported (e.g. iOS Safari / mobile)
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        const testFile = new File([''], 'test.mp4', { type: 'video/mp4' });
+        if (navigator.canShare && navigator.canShare({ files: [testFile] })) {
+          setCanShare(true);
+        }
+      } catch {
+        setCanShare(false);
+      }
+    }
+  }, []);
+
   // Handle direct file saving (avoids macOS browser download tag 'kMDItemWhereFroms')
   const handleDownloadClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (!cleanResult) return;
@@ -116,6 +133,28 @@ export default function Home() {
           a.download = cleanResult.recommendedFilename;
           a.click();
         }
+      }
+    }
+  };
+
+  // Handle native mobile share (allows saving directly to iPhone Camera Roll / Photos or TikTok)
+  const handleShare = async () => {
+    if (!cleanResult) return;
+    try {
+      const file = new File(
+        [cleanResult.cleanedBuffer as any],
+        cleanResult.recommendedFilename,
+        { type: 'video/mp4' }
+      );
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: cleanResult.recommendedFilename,
+        });
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.error('Erro ao compartilhar:', err);
       }
     }
   };
@@ -665,7 +704,7 @@ export default function Home() {
               <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 Formato do nome para simular gravação na câmera do celular (evita flag de repost):
               </span>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button
                   type="button"
                   className={`tab-btn ${cameraStyle === 'iphone' ? 'active' : ''}`}
@@ -701,8 +740,32 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Download Buttons Group */}
+            {/* Download & Share Buttons Group */}
             <div className="action-buttons-group">
+              {canShare && (
+                <button
+                  type="button"
+                  id="share-clean-video-btn"
+                  onClick={handleShare}
+                  className="action-btn-primary"
+                  style={{
+                    background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+                    boxShadow: '0 8px 25px rgba(6, 182, 212, 0.35)',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.75rem',
+                    padding: '1.15rem 1.75rem',
+                    fontSize: '1.05rem',
+                    fontWeight: 800,
+                  }}
+                >
+                  <Share2 size={22} />
+                  <span>Salvar nas Fotos (iPhone) / Compartilhar</span>
+                </button>
+              )}
+
               <a
                 id="download-clean-video-btn"
                 href={cleanVideoUrl}
@@ -711,7 +774,7 @@ export default function Home() {
                 className="download-clean-btn"
               >
                 <Download size={22} />
-                <span>Baixar Vídeo Limpo ({cleanResult.recommendedFilename})</span>
+                <span>Baixar Arquivo Limpo ({cleanResult.recommendedFilename})</span>
               </a>
 
               <button

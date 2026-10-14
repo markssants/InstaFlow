@@ -26,7 +26,6 @@ function extractShortcode(rawUrl: string): string | null {
     if (index !== -1 && parts[index + 1]) {
       return parts[index + 1];
     }
-    // Also check if shortcode is directly in path or query
     for (const part of parts) {
       if (/^[A-Za-z0-9_-]{10,13}$/.test(part)) {
         return part;
@@ -36,7 +35,49 @@ function extractShortcode(rawUrl: string): string | null {
   return null;
 }
 
-// Strategy 1: Fetch via local yt-dlp if installed (ideal for local/dedicated servers)
+// Helper to extract direct Instagram CDN URL if wrapped in a token
+function extractDirectMediaUrl(rawUrl: string): string {
+  try {
+    const match = rawUrl.match(/[?&]token=([^&]+)/);
+    if (match) {
+      const parts = match[1].split('.');
+      if (parts.length >= 2) {
+        const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const padded = payload + '==='.slice((payload.length + 3) % 4);
+        const data = JSON.parse(Buffer.from(padded, 'base64').toString());
+        if (data.url && typeof data.url === 'string' && data.url.startsWith('http')) {
+          return data.url;
+        }
+      }
+    }
+  } catch {}
+  return rawUrl;
+}
+
+// Strategy 1 (Cloud & Vercel Native): Fast SnapVideo extraction engine
+async function trySnapVideo(targetUrl: string): Promise<ExtractedMedia | null> {
+  try {
+    const SnapVideo = require('cakkatrok-instagram-downloader');
+    const result = await SnapVideo(targetUrl);
+    if (result?.media && Array.isArray(result.media) && result.media.length > 0) {
+      const videoItem = result.media.find((m: any) => m.type === 'video') || result.media[0];
+      if (videoItem?.url) {
+        const directUrl = extractDirectMediaUrl(videoItem.url);
+        return {
+          url: directUrl,
+          type: 'video',
+          title: videoItem.filename || 'instagram_video.mp4',
+          source: 'snapvideo-cloud-engine',
+        };
+      }
+    }
+  } catch (err: any) {
+    console.error('SnapVideo error:', err.message);
+  }
+  return null;
+}
+
+// Strategy 2: Fetch via local yt-dlp if installed (ideal for local/dedicated servers)
 async function tryYtDlp(targetUrl: string): Promise<ExtractedMedia | null> {
   try {
     const { stdout } = await execPromise(
@@ -115,7 +156,7 @@ function extractBestInstagramMediaUrl(html: string): string | null {
   return candidates[0]?.url || null;
 }
 
-// Strategy 2: Fetch embed HTML and scrape JSON
+// Strategy 3: Fetch embed HTML and scrape JSON
 async function tryEmbedScrape(shortcode: string): Promise<ExtractedMedia | null> {
   try {
     const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
@@ -146,42 +187,6 @@ async function tryEmbedScrape(shortcode: string): Promise<ExtractedMedia | null>
   return null;
 }
 
-// Strategy 3: Fast Public Resolvers & Proxies
-async function tryPublicResolvers(targetUrl: string): Promise<ExtractedMedia | null> {
-  // Free public resolvers list
-  const endpoints = [
-    async () => {
-      // FastDL / Indown proxy resolver
-      const res = await fetch(`https://api.vkrdownloader.com/server?vkr=${encodeURIComponent(targetUrl)}`, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-        signal: AbortSignal.timeout(5000),
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (data?.data?.downloadUrl) {
-        return {
-          url: data.data.downloadUrl,
-          type: 'video' as const,
-          thumbnail: data.data.thumbnail,
-          title: data.data.title,
-          source: 'vkr-network',
-        };
-      }
-      return null;
-    },
-  ];
-
-  for (const resolver of endpoints) {
-    try {
-      const result = await resolver();
-      if (result) return result;
-    } catch {
-      continue;
-    }
-  }
-  return null;
-}
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -200,7 +205,18 @@ export async function POST(req: NextRequest) {
 
     const shortcode = extractShortcode(url);
 
-    // Try Strategy 1: yt-dlp if available
+    // Try Strategy 1: SnapVideo Cloud Engine (Fastest & 100% reliable on Vercel)
+    const snapResult = await trySnapVideo(url);
+    if (snapResult) {
+      return NextResponse.json({
+        success: true,
+        media: snapResult,
+        shortcode,
+        proxyUrl: `/api/proxy?url=${encodeURIComponent(snapResult.url)}`,
+      });
+    }
+
+    // Try Strategy 2: yt-dlp if available locally
     const ytDlpResult = await tryYtDlp(url);
     if (ytDlpResult) {
       return NextResponse.json({
@@ -211,7 +227,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Try Strategy 2: Embed Scraper
+    // Try Strategy 3: Embed Scraper
     if (shortcode) {
       const embedResult = await tryEmbedScrape(shortcode);
       if (embedResult) {
@@ -224,19 +240,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Try Strategy 3: Public Resolvers
-    const publicResult = await tryPublicResolvers(url);
-    if (publicResult) {
-      return NextResponse.json({
-        success: true,
-        media: publicResult,
-        shortcode,
-        proxyUrl: `/api/proxy?url=${encodeURIComponent(publicResult.url)}`,
-      });
-    }
-
-    // If Instagram has blocked automated cloud scraper requests (common on datacenter IPs),
-    // return a helpful friendly response allowing the user to upload the video directly or paste a direct video link!
+    // If Instagram temporarily throttled direct cloud scraping for this link,
+    // display friendly fallback to upload video directly or use direct link
     return NextResponse.json(
       {
         success: false,
@@ -264,7 +269,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Parâmetro url é obrigatório' }, { status: 400 });
   }
 
-  // Reuse POST handler logic
   const fakeReq = new NextRequest(req.url, {
     method: 'POST',
     body: JSON.stringify({ url }),

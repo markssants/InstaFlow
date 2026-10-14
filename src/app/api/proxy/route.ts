@@ -35,7 +35,7 @@ async function convertVp9ToH264(inputBuffer: any): Promise<any> {
     } catch {}
 
     // Transcode VP9/DASH to universal Apple/TikTok compatible H.264 (AVC) + AAC
-    // -preset ultrafast -crf 23 ensures very fast encoding (~2-4 seconds)
+    // -preset ultrafast -crf 23 ensures rapid completion in ~2-4s
     const cmd = hasAudio
       ? `ffmpeg -y -i "${tmpIn}" -c:v libx264 -preset ultrafast -crf 23 -c:a aac -b:a 128k -movflags +faststart "${tmpOut}"`
       : `ffmpeg -y -i "${tmpIn}" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -c:v libx264 -preset ultrafast -crf 23 -c:a aac -b:a 128k -shortest -movflags +faststart "${tmpOut}"`;
@@ -74,6 +74,8 @@ export async function GET(req: NextRequest) {
       parsedUrl.hostname.includes('fbcdn.net') ||
       parsedUrl.hostname.includes('instagram.com') ||
       parsedUrl.hostname.includes('threads.net') ||
+      parsedUrl.hostname.includes('snapcdn.app') ||
+      parsedUrl.hostname.includes('snapvideo.app') ||
       parsedUrl.hostname.includes('cobalt') ||
       parsedUrl.hostname.includes('wuk.sh');
 
@@ -84,11 +86,15 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const referer = parsedUrl.hostname.includes('snapcdn') || parsedUrl.hostname.includes('snapvideo')
+      ? 'https://snapvideo.app/'
+      : 'https://www.instagram.com/';
+
     const response = await fetch(videoUrl, {
       headers: {
         'User-Agent':
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        Referer: 'https://www.instagram.com/',
+        Referer: referer,
         Accept: '*/*',
       },
     });
